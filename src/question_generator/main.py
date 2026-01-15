@@ -86,6 +86,7 @@ def main():
             difficulty=difficulty,
             question_type=question_type,
             num_options=num_options,
+            output_path=str(output_folder),
             iteration_id=output_folder.name
         )
     except Exception as e:

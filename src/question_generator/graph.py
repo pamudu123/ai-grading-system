@@ -85,6 +85,7 @@ def run_question_generator(
     subject: str,
     difficulty: str,
     question_type: str,
+    output_path: str,
     num_options: int = 4,
     iteration_id: str | None = None
 ) -> QuestionState:
@@ -95,6 +96,7 @@ def run_question_generator(
         subject: The subject for question generation (e.g., 'physics')
         difficulty: Difficulty level ('Easy', 'Medium', 'Hard')
         question_type: Type of question ('MCQ', 'Short Answer', 'Long Answer')
+        output_path: Path to the output folder for saving artifacts
         num_options: Number of options for MCQ (default: 4)
         iteration_id: Optional ID for this generation iteration
     
@@ -111,6 +113,7 @@ def run_question_generator(
         "question_type": question_type,
         "num_options": num_options,
         "iteration_id": iteration_id or "",
+        "output_folder": output_path,
         "revision_count": 0,
         "is_approved": False,
         "context": "",

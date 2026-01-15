@@ -132,12 +132,6 @@ Return ONLY valid JSON, no additional text."""
 def question_generator_node(state: QuestionState) -> dict:
     """
     LangGraph node that generates questions based on type and difficulty.
-    
-    Args:
-        state: Current QuestionState with context, difficulty, question_type
-    
-    Returns:
-        Updated state dict with question, options (MCQ), correct_answer, etc.
     """
     context = state.get("context", "")
     difficulty = state.get("difficulty", "Medium")
@@ -146,6 +140,7 @@ def question_generator_node(state: QuestionState) -> dict:
     topic = state.get("topic", "General")
     revision_count = state.get("revision_count", 0)
     review_feedback = state.get("review_feedback", "")
+    output_folder = state.get("output_folder", "")
     
     llm = create_question_llm()
     
@@ -159,7 +154,7 @@ def question_generator_node(state: QuestionState) -> dict:
     else:
         return {"question": f"Unknown question type: {question_type}"}
     
-    # Add revision context if this is a retry
+    # Add revision context
     if revision_count > 0 and review_feedback:
         prompt += f"\n\nPREVIOUS FEEDBACK (please address these issues):\n{review_feedback}"
     
@@ -167,7 +162,7 @@ def question_generator_node(state: QuestionState) -> dict:
         response = llm.invoke(prompt)
         content = response.content.strip()
         
-        # Clean up response - remove markdown code blocks if present
+        # Clean up response
         if content.startswith("```"):
             content = content.split("```")[1]
             if content.startswith("json"):
@@ -177,13 +172,6 @@ def question_generator_node(state: QuestionState) -> dict:
         # Parse JSON response
         result = json.loads(content)
         
-    except json.JSONDecodeError as e:
-        print(f"JSON parsing error: {e}")
-        print(f"Raw content: {content[:500]}")
-        return {
-            "question": "Error: Failed to parse LLM response",
-            "revision_count": revision_count + 1
-        }
     except Exception as e:
         print(f"Error generating question: {e}")
         return {
@@ -198,7 +186,43 @@ def question_generator_node(state: QuestionState) -> dict:
         "revision_count": revision_count
     }
     
-    if question_type == "MCQ":
+    # Handle Graph Options specifically for MCQ
+    if question_type == "MCQ" and result.get("graph_options") and output_folder:
+        graph_options = result.get("graph_options")
+        image_options = []
+        
+        for i, opt in enumerate(graph_options):
+            label = opt.get("label", str(i+1))
+            g_type = opt.get("type")
+            path = Path(output_folder) / f"option_{label}.png"
+            
+            try:
+                if g_type == "linear":
+                    generate_linear_graph(
+                        m=opt.get("m", 1), 
+                        c=opt.get("c", 0), 
+                        output_path=str(path),
+                        title=f"Option {label}"
+                    )
+                elif g_type == "quadratic":
+                    generate_quadratic_graph(
+                        a=opt.get("a", 1),
+                        b=opt.get("b", 0),
+                        c=opt.get("c", 0),
+                        output_path=str(path),
+                        title=f"Option {label}"
+                    )
+                
+                # Add markdown image link as option
+                image_options.append(f"**{label}.** ![{label}]({path.name})")
+            except Exception as e:
+                print(f"Failed to generate graph for option {label}: {e}")
+                image_options.append(f"**{label}.** [Graph Generation Failed]")
+        
+        if image_options:
+            output["options"] = image_options
+    
+    if question_type == "MCQ" and "options" not in output:
         output["options"] = result.get("options", [])
         output["answer_derivation"] = result.get("explanation", "")
         
@@ -209,8 +233,8 @@ def question_generator_node(state: QuestionState) -> dict:
         output["marking_scheme"] = result.get("marking_scheme", {})
         output["answer_derivation"] = result.get("correct_answer", "")
     
-    # Check if graph is needed
-    if result.get("needs_graph"):
+    # Check if graph is needed for Question itself
+    if result.get("needs_graph") and result.get("graph_description"):
         output["graph_description"] = result.get("graph_description")
     
     return output
