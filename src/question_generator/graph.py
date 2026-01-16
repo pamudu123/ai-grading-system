@@ -86,7 +86,10 @@ def run_question_generator(
     difficulty: str,
     question_type: str,
     output_path: str,
+    question_id: str = "q1",
+    previous_questions: list[str] = [],
     num_options: int = 4,
+    custom_instructions: str = "",
     iteration_id: str | None = None
 ) -> QuestionState:
     """
@@ -98,6 +101,7 @@ def run_question_generator(
         question_type: Type of question ('MCQ', 'Short Answer', 'Long Answer')
         output_path: Path to the output folder for saving artifacts
         num_options: Number of options for MCQ (default: 4)
+        custom_instructions: Optional user-provided instructions to guide generation
         iteration_id: Optional ID for this generation iteration
     
     Returns:
@@ -108,10 +112,13 @@ def run_question_generator(
     
     # Prepare initial state
     initial_state: QuestionState = {
+        "question_id": question_id,
+        "previous_questions": previous_questions,
         "subject": subject,
         "difficulty": difficulty,
         "question_type": question_type,
         "num_options": num_options,
+        "custom_instructions": custom_instructions,
         "iteration_id": iteration_id or "",
         "output_folder": output_path,
         "revision_count": 0,

@@ -10,13 +10,12 @@ Usage:
 from pathlib import Path
 
 from .graph import run_question_generator
-from .output import create_iteration_folder, save_question_as_markdown, save_generation_summary
+from .output import create_iteration_folder, save_question_as_markdown, save_generation_summary, save_question_as_json, save_batch_json
 from .config import DIFFICULTY_LEVELS, QUESTION_TYPES, SUBJECTS
 
 
 # ============================================================================
-# SAMPLE INPUT VARIABLES (No argparse as per user rules)
-# Modify these values to test different configurations
+# SAMPLE INPUT VARIABLES
 # ============================================================================
 
 # Subject to generate questions for (must exist in doc_info.yaml)
@@ -62,7 +61,7 @@ def main():
     if not validate_inputs():
         return
     
-    print(f"\nConfiguration:")
+    print(f"Configuration:")
     print(f"  Subject: {subject}")
     print(f"  Difficulty: {difficulty}")
     print(f"  Question Type: {question_type}")
@@ -76,73 +75,70 @@ def main():
     print(f"  Output folder: {output_folder}")
     print()
     
+    # Prompt for custom instructions
+    custom_instructions = 'Generate Calculations related Questions. Questions that needs visual figures'
+
     # Run the question generator workflow
     print("Running question generation workflow...")
     print("-" * 40)
     
+    # Prompt for number of questions
+    print("Enter number of questions to generate (Default 1):")
     try:
-        final_state = run_question_generator(
-            subject=subject,
-            difficulty=difficulty,
-            question_type=question_type,
-            num_options=num_options,
-            output_path=str(output_folder),
-            iteration_id=output_folder.name
-        )
-    except Exception as e:
-        print(f"\nError during generation: {e}")
-        import traceback
-        traceback.print_exc()
-        return
+        num_str = input("> ").strip()
+        num_questions = int(num_str) if num_str else 1
+    except ValueError:
+        print("Invalid number. Defaulting to 1.")
+        num_questions = 1
     
+    results = []
+    previous_questions_text = []
+    
+    for i in range(num_questions):
+        question_id = f"q{i+1}"
+        print(f"\nProcessing Question {i+1}/{num_questions} (ID: {question_id})...")
+        
+        try:
+            final_state = run_question_generator(
+                subject=subject,
+                difficulty=difficulty,
+                question_type=question_type,
+                num_options=num_options,
+                output_path=str(output_folder),
+                question_id=question_id,
+                custom_instructions=custom_instructions,
+                previous_questions=previous_questions_text,
+                iteration_id=output_folder.name
+            )
+            results.append(final_state)
+            
+            # Add generated question to history to avoid duplicates
+            if final_state.get("question"):
+                previous_questions_text.append(final_state.get("question"))
+                
+            print(f"  Generated successfully.")
+            
+        except Exception as e:
+            print(f"  Error generating question {question_id}: {e}")
+            import traceback
+            traceback.print_exc()
+
     print("-" * 40)
-    print("\nGeneration complete!")
+    print("Generation complete!")
     print()
     
-    # Display results
-    print("Generated Question:")
-    print("-" * 40)
-    print(final_state.get("question", "No question generated"))
-    print()
-    
-    if question_type == "MCQ":
-        print("Options:")
-        for opt in final_state.get("options", []):
-            print(f"  {opt}")
-        print()
-        print(f"Correct Answer: {final_state.get('correct_answer', 'N/A')}")
-    
-    elif question_type == "Short Answer":
-        print(f"Answer: {final_state.get('correct_answer', 'N/A')}")
-        print()
-        print("Derivation:")
-        print(final_state.get("answer_derivation", "No derivation"))
-    
-    elif question_type == "Long Answer":
-        print(f"Answer: {final_state.get('correct_answer', 'N/A')[:200]}...")
-        print()
-        print("Marking Scheme:")
-        for criteria, marks in final_state.get("marking_scheme", {}).items():
-            print(f"  - {criteria}: {marks} marks")
-    
-    print()
-    print(f"Review Status: {'Approved' if final_state.get('is_approved') else 'Not Approved'}")
-    if final_state.get("review_feedback"):
-        print(f"Feedback: {final_state.get('review_feedback')}")
-    
-    # Save outputs
-    print("\nSaving outputs...")
-    
-    # Update state with output folder
-    final_state["output_folder"] = str(output_folder)
-    
-    # Save question as markdown
-    md_path = save_question_as_markdown(final_state, output_folder)
-    print(f"  Question saved: {md_path}")
-    
-    # Save generation summary
-    summary_path = save_generation_summary(final_state, output_folder)
-    print(f"  Summary saved: {summary_path}")
+    if results:
+        # Save Batch JSON
+        print("Saving batch results...")
+        batch_path = save_batch_json(results, output_folder)
+        print(f"  Batch JSON saved: {batch_path}")
+        
+        # Display first result as sample
+        print("\nSample Result (Question 1):")
+        print("-" * 20)
+        sample = results[0]
+        print(sample.get("question", "No question text"))
+        print(f"Correct Answer: {sample.get('correct_answer', 'N/A')}")
     
     print()
     print("=" * 60)

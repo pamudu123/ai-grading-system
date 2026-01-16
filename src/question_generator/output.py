@@ -190,6 +190,71 @@ def save_question_as_markdown(state: QuestionState, folder: Path | str) -> str:
     return str(file_path)
 
 
+def save_question_as_json(state: QuestionState, folder: Path | str) -> str:
+    """
+    Save the question and all associated data as a JSON file.
+    
+    Args:
+        state: The QuestionState with all question data
+        folder: Folder path to save the JSON file
+    
+    Returns:
+        Path to the saved JSON file
+    """
+    import json
+    
+    folder = Path(folder)
+    folder.mkdir(parents=True, exist_ok=True)
+    
+    # Clean up state for export (remove internal processing fields if needed, or keep all)
+    # We'll create a copy to avoid modifying the original state
+    export_data = dict(state)
+    
+    # Add timestamp
+    export_data["exported_at"] = datetime.now().isoformat()
+    
+    question_type = state.get('question_type', 'MCQ').lower().replace(" ", "_")
+    filename = f"{question_type}_question.json"
+    
+    file_path = folder / filename
+    with open(file_path, 'w', encoding='utf-8') as f:
+        json.dump(export_data, f, indent=2)
+    
+    print(f"Saved question JSON to: {file_path}")
+    return str(file_path)
+
+
+def save_batch_json(states: list[QuestionState], folder: Path | str) -> str:
+    """
+    Save multiple questions to a single JSON file.
+    
+    Args:
+        states: List of QuestionState objects
+        folder: Folder path to save the JSON file
+    
+    Returns:
+        Path to the saved JSON file
+    """
+    import json
+    
+    folder = Path(folder)
+    folder.mkdir(parents=True, exist_ok=True)
+    
+    export_data = {
+        "generated_at": datetime.now().isoformat(),
+        "count": len(states),
+        "questions": [dict(s) for s in states]
+    }
+    
+    file_path = folder / "questions.json"
+    
+    with open(file_path, 'w', encoding='utf-8') as f:
+        json.dump(export_data, f, indent=2)
+    
+    print(f"Saved {len(states)} questions to: {file_path}")
+    return str(file_path)
+
+
 def save_generation_summary(state: QuestionState, folder: Path | str) -> str:
     """
     Save a summary JSON file with all generation metadata.

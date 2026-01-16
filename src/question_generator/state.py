@@ -11,10 +11,13 @@ class QuestionState(TypedDict, total=False):
     This state is passed between agents and modified at each step.
     """
     # Input parameters
+    question_id: str  # Unique identifier for this question instance (e.g. "q1")
+    previous_questions: list[str]  # List of previously generated questions to avoid duplicates
     subject: str
     difficulty: Literal["Easy", "Medium", "Hard"]
     question_type: Literal["MCQ", "Short Answer", "Long Answer"]
     num_options: int
+    custom_instructions: str
     
     # Context retrieved from documents
     context: str

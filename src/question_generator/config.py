@@ -13,7 +13,8 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 # ============================================================================
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-MODEL_NAME = "google/gemini-2.0-flash-001"
+MODEL_NAME = "google/gemini-3-flash-preview"
+MODEL_IMAGE_NAME = "openai/gpt-5-image-mini"
 
 # ============================================================================
 # Project Paths
@@ -45,5 +46,5 @@ TOTAL_MARKS = 100
 # LLM Configuration
 # ============================================================================
 MAX_RETRIES = 3
-TEMPERATURE = 0.7
+TEMPERATURE = 0.3
 MAX_TOKENS = 4096
