@@ -2,7 +2,7 @@ import base64
 import json
 import os
 import requests
-from typing import List, Dict, Any, Union
+from typing import Any
 from pathlib import Path
 
 # Try to import config, assuming we are running from project root or src
@@ -19,7 +19,7 @@ def encode_image(image_path: str) -> str:
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
 
-def extract_answers(image_path: str) -> Dict[str, List[int]]:
+def extract_answers(image_path: str) -> dict[str, list[int]]:
     """
     Extracts answers from an MCQ answer sheet image using an LLM.
     
@@ -107,7 +107,7 @@ def extract_answers(image_path: str) -> Dict[str, List[int]]:
     except Exception as e:
         raise RuntimeError(f"Failed to extract answers: {e}")
 
-def grade_mcq(extracted_answers: Dict[str, List[int]], correct_answers: Dict[str, List[int]]) -> Dict[str, Any]:
+def grade_mcq(extracted_answers: dict[str, list[int]], correct_answers: dict[str, list[int]]) -> dict[str, Any]:
     """
     Grades the extracted answers against the correct answers.
     

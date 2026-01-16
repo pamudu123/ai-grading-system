@@ -8,7 +8,7 @@ current_dir = Path(__file__).parent.resolve()
 project_root = current_dir.parent.parent
 sys.path.append(str(project_root))
 
-from src.grader.mcq_grader import extract_answers, grade_mcq
+from src.grader.mcq.mcq_grader import extract_answers, grade_mcq
 
 def main():
     # Path to sample image
